@@ -1,3 +1,26 @@
+/** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
+ *  This file is part of graphplusplus project
+ *  Copyright (C) 2011 Avinash Dongre ( dongre.avinash@gmail.com )
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ * 
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ * 
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+
 #ifndef _GRAPH_H__
 #define _GRAPH_H__
 
@@ -123,11 +146,8 @@ private:
 	}
 
 	void _DepthFirstSearch(VertexType *V) {
-		//bool bAllAdjacentVisited = true;
-
 		std::stack<VertexType *> S;
 		V->SetVisited(true);
-		std::cout << "Visiting -> " << *V << std::endl;
 		S.push( V );
 
 		while ( !S.empty()) {
@@ -140,14 +160,11 @@ private:
 				if (currentVertex->GetVisited() == false) {
 					currentVertex->SetVisited(true);
 					S.push(currentVertex);
-					//bAllAdjacentVisited = false;
-					std::cout << "Visiting -> " << *currentVertex << std::endl;
 					break;
 				}
 			}
 			if ( itr == vertexAdjList.end()) {
 				S.pop();
-				//bAllAdjacentVisited = false;
 			}
 		}
 	}
