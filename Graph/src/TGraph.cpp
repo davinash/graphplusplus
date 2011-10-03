@@ -26,7 +26,7 @@
 
 void BuildMyGraph( Graph<std::string> &myGraph) {
 
-	myGraph.AddEdge("v1","v5");
+	/*myGraph.AddEdge("v1","v5");
 	myGraph.AddEdge("v5","v6");
 	myGraph.AddEdge("v6","v1");
 	myGraph.AddEdge("v1","v3");
@@ -35,6 +35,26 @@ void BuildMyGraph( Graph<std::string> &myGraph) {
 	myGraph.AddEdge("v2","v4");
 	myGraph.AddEdge("v1","v4");
 	myGraph.AddEdge("v10", "v11");
+	*/
+	myGraph.AddEdge("v","r");
+	myGraph.AddEdge("r","s");
+	myGraph.AddEdge("s","w");
+	myGraph.AddEdge("w","x");
+	myGraph.AddEdge("w","t");
+	myGraph.AddEdge("t","x");
+	myGraph.AddEdge("t","u");
+	myGraph.AddEdge("x","u");
+	myGraph.AddEdge("x","y");
+	myGraph.AddEdge("u","y");
+
+	/*myGraph.AddEdge("a","b");
+	myGraph.AddEdge("a","c");
+	myGraph.AddEdge("b","d");
+	myGraph.AddEdge("b","e");
+	myGraph.AddEdge("e","h");
+	myGraph.AddEdge("c","f");
+	myGraph.AddEdge("c","g");*/
+
 }
 
 int main(int argc, char **argv) {
@@ -43,7 +63,11 @@ int main(int argc, char **argv) {
 	BuildMyGraph(myGraph);
 
 	std::cout << myGraph;
+	//myGraph.BFS();
 
-	myGraph.DepthFirstSearch();
+
+	myGraph.print_path("r","y");
+//	myGraph.DepthFirstSearch();
+
 
 }

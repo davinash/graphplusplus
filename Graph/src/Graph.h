@@ -33,34 +33,45 @@
 #include <iostream>
 #include <algorithm>
 #include <functional>
+#include <deque>
 
 // To avoid warning C4503:
 // decorated name length exceeded, name was truncated
 #pragma warning(disable:4503)
 
+enum VertexColor  {
+	BLACK,
+	WHITE,
+	GRAY
+};
+
+enum GraphType {
+	DIRECTED,
+	UNDIRECTED
+};
 
 template <typename _TyV>
 class Vertex {
 public:
-	Vertex(_TyV in) : m_Label(in),
-	                  m_bVisited(false){ }
+	Vertex(_TyV in) :	m_Label(in){ }
 	~Vertex() { }
 	bool operator < ( const Vertex & right) const {
 		return m_Label < right.m_Label;
 	}
+
+	bool operator == ( const Vertex & right ) const {
+		return m_Label == right.m_Label;
+	}
+
 	friend std::ostream& operator << (std::ostream& os, const Vertex& vertex) {
 		return os << vertex.m_Label;	
 	}
 
 	_TyV getLabel() { return m_Label;}
-
-	void SetVisited(bool bVisited) { 
-		m_bVisited = bVisited ;
-	}
-	bool GetVisited() { return m_bVisited;}
 private:
 	_TyV m_Label;
-	bool m_bVisited;
+public:
+	VertexColor m_Color;
 protected:
 };
 
@@ -75,116 +86,157 @@ template <typename _TyG>
 class Graph {
 private:		
 public:
-	typedef typename Vertex<_TyG>							VertexType;
-	typedef typename std::set<VertexType>					GraphStorage;
-	typedef typename GraphStorage::iterator					GraphStorageItr;
-	typedef typename GraphStorage::const_iterator			GraphStorageConstItr;
+	typedef typename Vertex<_TyG>						Vertex_t;
+	typedef typename std::set<Vertex_t>					GraphStorage;
+	typedef typename GraphStorage::iterator				GraphStorageItr;
+	typedef typename GraphStorage::const_iterator		GraphStorageConstItr;
 
-	typedef typename std::list<VertexType *>				AdjListType;
-	typedef typename AdjListType::iterator					AdjListTypeItr;
-	typedef typename AdjListType::const_iterator			AdjListTypeConstItr;
+	typedef typename std::list<Vertex_t *>				AdjList_t;
+	typedef typename AdjList_t::iterator				AdjListItr_t;
+	typedef typename AdjList_t::const_iterator			AdjListTypeConstItr;
 
-	typedef typename std::map<	VertexType*, 
-								AdjListType, 
-								CompareIterator<VertexType*> >	GraphType;
+	typedef typename std::map<	Vertex_t*, 
+						AdjList_t, 
+						CompareIterator<Vertex_t*> >	Graph_t;
 
-	typedef typename GraphType::iterator					GraphTypeItr;
-	typedef typename GraphType::const_iterator				GraphTypeConstItr;
+	typedef typename Graph_t::iterator					GraphTypeItr;
+	typedef typename Graph_t::const_iterator			GraphTypeConstItr;
 
 public:
-	Graph(bool bType = true) : m_Type(bType) {}
+	Graph(GraphType eType = UNDIRECTED) : m_Type(eType) {
+		m_BFSdone = false;
+	}
 	~Graph() {}
 
-	void AddVertex(VertexType vertexID) {
+	void AddVertex(Vertex_t vertexID) {
 		if ( m_GraphStorage.find(vertexID) == m_GraphStorage.end()) {
 			m_GraphStorage.insert(vertexID);
 		}	
+		m_BFSdone = false; // any modification done
 	}
 
-	AdjListType GetAdjList(VertexType vertexID) {
-		VertexType *vVertexIDPtr  = &(*(m_GraphStorage.find(vertexID)));
+	AdjList_t GetAdjList(Vertex_t vertexID) {
+		Vertex_t *vVertexIDPtr  = &(*(m_GraphStorage.find(vertexID)));
 		GraphTypeItr iter = m_Graph.find(vVertexIDPtr);
-		AdjListType list;
+		AdjList_t list;
 		if ( iter != m_Graph.end()){
 			return iter->second;
 		}
 		return list;
 	}
-	void AddEdge(VertexType vLeft, VertexType vRight) {
+	void AddEdge(Vertex_t vLeft, Vertex_t vRight) {
 		AddVertex(vLeft);
 		AddVertex(vRight);	
 
-		VertexType *vLeftPtr  = &(*(m_GraphStorage.find(vLeft)));
-		VertexType *vRightPtr = &(*(m_GraphStorage.find(vRight)));
+		Vertex_t *vLeftPtr  = &(*(m_GraphStorage.find(vLeft)));
+		Vertex_t *vRightPtr = &(*(m_GraphStorage.find(vRight)));
 
 		m_Graph[vLeftPtr].push_back(vRightPtr);
-		if ( m_Type ) {
+		if ( m_Type == UNDIRECTED) {
 			m_Graph[vRightPtr].push_back(vLeftPtr);
 		}
+		m_BFSdone = false;
 	}
 
 	void AddEdge(_TyG vLevt, _TyG vRight) {
-        this->AddEdge((VertexType) vLevt, (VertexType) vRight);
+        this->AddEdge((Vertex_t) vLevt, (Vertex_t) vRight);
     }
-	/* 
-	 * DFS of an undirected graph is G = ( V, E ) partitions
-	 * the edges in E into two sets T and B.
-	 * T is called as tree edges, and B is called as back edges.
-	 * The subgraph ( V, T ) is an undirected forect
-	 * called a depth-first spanning forest for Graph G.
-	 * 
-	 * DepthFirstSearch will return depth-first spanning forest
-	 *
-	 */
-private:
-	void _init_not_visited() {
-		for ( GraphStorageItr itr =  m_GraphStorage.begin();
-			                  itr != m_GraphStorage.end();
-							  ++itr ) {
-			itr->SetVisited(false);
+
+	void BFS(Vertex_t *pStart = (Vertex_t*)0) {
+		if ( ! pStart) {
+			pStart = m_Graph.begin()->first;
 		}
+		_BFS(pStart);
+		m_BFSdone = true;
 	}
 
-	void _DepthFirstSearch(VertexType *V) {
-		std::stack<VertexType *> S;
-		V->SetVisited(true);
-		S.push( V );
+	void print_path(_TyG S, _TyG V) {
 
-		while ( !S.empty()) {
-			VertexType *topVertex = S.top();
+		Vertex_t *pS  = (Vertex_t*)0;
+		Vertex_t *pV =  (Vertex_t*)0;
 
-			AdjListType vertexAdjList = m_Graph.find(topVertex)->second;
-			AdjListTypeItr itr;
-			for ( itr = vertexAdjList.begin(); itr != vertexAdjList.end(); ++itr) {
-				VertexType *currentVertex = (*itr);
-				if (currentVertex->GetVisited() == false) {
-					currentVertex->SetVisited(true);
-					S.push(currentVertex);
-					break;
+		if ( m_GraphStorage.find(S) != m_GraphStorage.end()){
+			pS  = &(*(m_GraphStorage.find(S)));
+		}
+		if ( m_GraphStorage.find(V) != m_GraphStorage.end()){
+			pV  = &(*(m_GraphStorage.find(V)));
+		}
+
+		if ( !pS || !pV){
+			return;
+		}
+
+		if ( ! m_BFSdone ) {			
+			_BFS(pS);
+		}
+		std::vector<Vertex_t *> pathVector;
+		_print_path(pS, pV, pathVector);
+
+		std::vector<Vertex_t *>::iterator itr ;
+		for (itr =  pathVector.begin();itr != pathVector.end() - 1; ++itr) {
+			std::cout << *(*itr) << " --> " ;
+		}
+		std::cout << *(*itr);
+		std::cout << std::endl;
+	}
+	
+private:
+	void _print_path(Vertex_t *S,Vertex_t *V, std::vector<Vertex_t *> & pathVector){
+		if (*S == *V) {
+			pathVector.push_back(V);
+		} else {
+			if ( m_bfs_parent[V] == ( Vertex_t*)0)
+				std::cout << "No Parth from " << *S << " to" << *V << "exists" << std::endl;
+			else
+				_print_path(S,m_bfs_parent[V],pathVector);
+
+			pathVector.push_back(V);
+		}
+	}
+	void _BFS(Vertex_t *S) {
+		// 1. Paint every vertex as WHITE
+		// 2. Set the d to -1
+		// 3. Set the p of each vertex to NULL
+		for ( GraphTypeItr itr = m_Graph.begin();itr != m_Graph.end(); ++itr) {
+			Vertex_t *U = itr->first;
+			U->m_Color =  WHITE;
+			m_bfs_Distance[U] = -1;
+			m_bfs_parent[U] = (Vertex_t *)0;
+		}
+		S->m_Color = GRAY;
+		// Initialize the d to 0
+		m_bfs_Distance[S] = 0;
+		m_bfs_parent[S] = (Vertex_t *)0;
+
+		std::deque<Vertex_t*> Q;
+		// Enque s ( given vertex ) to Queue Q
+		Q.push_back(S);
+		while ( !Q.empty()) {
+			Vertex_t *U  = Q.front();
+			Q.pop_front();
+			AdjList_t vAdjList = m_Graph.find(U)->second;
+
+			for ( AdjListItr_t itr = vAdjList.begin(); itr != vAdjList.end(); ++itr) {
+				Vertex_t *V = *(itr);
+				if ( V->m_Color == WHITE ) {
+					V->m_Color = GRAY;
+					m_bfs_Distance[V] = m_bfs_Distance[U] + 1;
+					m_bfs_parent[V] = U;
+					Q.push_back(V);
 				}
 			}
-			if ( itr == vertexAdjList.end()) {
-				S.pop();
-			}
-		}
+			U->m_Color = BLACK;
+		} // Queue empty loop
 	}
 public:
-	void DepthFirstSearch() {
-		_init_not_visited();
-		for ( GraphTypeItr I = m_Graph.begin();I != m_Graph.end(); ++I) {
-			if ( I->first->GetVisited() == false )
-				_DepthFirstSearch(I->first);
-		}
-	}
-
 	friend std::ostream& operator << (std::ostream& os, Graph& graph) {
 		std::cout << "---------------------------------------------" << std::endl;
 		for ( GraphStorageItr	iter = graph.m_GraphStorage.begin(); 
 								iter != graph.m_GraphStorage.end(); 
 								++iter) {
 			std::cout << *iter << " : " ;
-			AdjListType list = graph.GetAdjList(*iter);
-			AdjListTypeItr iter1;
+			AdjList_t list = graph.GetAdjList(*iter);
+			AdjListItr_t iter1;
 			for ( iter1 = list.begin(); iter1 != list.end(); ++iter1) {
 				std::cout << *(*iter1) << '\t' ;
 			}
@@ -194,9 +246,21 @@ public:
 		return os;
 	}
 private:
-	bool          m_Type; 
-	GraphType     m_Graph;
+	GraphType m_Type; 
+	Graph_t   m_Graph;
 	GraphStorage  m_GraphStorage;
+
+	// Distance map
+	std::map<	Vertex_t*, 
+				int, 
+				CompareIterator<Vertex_t*> > m_bfs_Distance;
+	// Parent Map
+	std::map<	Vertex_t*, 
+				Vertex_t*, 
+				CompareIterator<Vertex_t*> > m_bfs_parent;
+	//is BFS algorithm executed
+	bool m_BFSdone;
+
 protected:
 };
 
@@ -206,7 +270,7 @@ protected:
 
 /*
 		// Tree and Back Edges both.
-		std::stack<VertexType *> TBEdges; 
+		std::stack<Vertex_t *> TBEdges; 
 
 		InitToFalse();
 
@@ -219,20 +283,20 @@ protected:
 				TBEdges.push(&(*iter));
 			}
 			while (!TBEdges.empty()) {
-				VertexType* vLeft = TBEdges.top();
+				Vertex_t* vLeft = TBEdges.top();
 				TBEdges.pop();
 				vLeft->SetVisited(true);
 
-				AdjListType AdjList = this->GetAdjList(*vLeft);
-				for ( AdjListTypeItr	iterAdjList = AdjList.begin();  
+				AdjList_t AdjList = this->GetAdjList(*vLeft);
+				for ( AdjListItr_t	iterAdjList = AdjList.begin();  
 										iterAdjList != AdjList.end();  
 										++iterAdjList) {
-					VertexType *vTemp = (*iterAdjList);
+					Vertex_t *vTemp = (*iterAdjList);
 					if ( vTemp->isVisited() == false ) {
 						TBEdges.push(&(*vTemp));
 					}
 				} // Adjacency loop ends here.
-				VertexType *vRight = TBEdges.top();
+				Vertex_t *vRight = TBEdges.top();
 				TBEdges.pop();
 				std::cout << "Adding Edge " << *vLeft << "," << *vRight << std::endl;
 				outDFST.AddEdge(*vLeft, *vRight);
