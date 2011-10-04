@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <functional>
 #include <deque>
+#include <list>
 
 // To avoid warning C4503:
 // decorated name length exceeded, name was truncated
@@ -42,7 +43,7 @@
 enum VertexColor  {
 	BLACK,
 	WHITE,
-	GRAY
+	GREY
 };
 
 enum GraphType {
@@ -50,43 +51,49 @@ enum GraphType {
 	UNDIRECTED
 };
 
-template <typename _TyV>
+enum GraphOperation {
+	TOPOLOGICALSORT
+};
+
+template <typename TypeV>
 class Vertex {
 public:
-	Vertex(_TyV in) :	m_Label(in){ }
+	Vertex(TypeV in) :	m_Data(in){ }
 	~Vertex() { }
+	Vertex( Vertex const &right) : m_Data(right.m_Data){}
+
 	bool operator < ( const Vertex & right) const {
-		return m_Label < right.m_Label;
+		return m_Data < right.m_Data;
 	}
 
 	bool operator == ( const Vertex & right ) const {
-		return m_Label == right.m_Label;
+		return m_Data == right.m_Data;
 	}
 
-	friend std::ostream& operator << (std::ostream& os, const Vertex& vertex) {
-		return os << vertex.m_Label;	
+	friend std::ostream& operator << (std::ostream& os, 
+								const Vertex& vertex) {
+		return os << vertex.m_Data;	
 	}
-
-	_TyV getLabel() { return m_Label;}
+	TypeV getRemoteData() { return m_Data;}
 private:
-	_TyV m_Label;
+	TypeV m_Data;
 public:
 	VertexColor m_Color;
 protected:
 };
 
-template <typename _TyI>
+template <typename TypeI>
 struct  CompareIterator {
-      bool operator()(_TyI left,_TyI right) { 
+      bool operator()(TypeI left,TypeI right) { 
 		  return *left < *right; 
 	  }
 };
 
-template <typename _TyG>
+template <typename TypeG>
 class Graph {
 private:		
 public:
-	typedef typename Vertex<_TyG>						Vertex_t;
+	typedef typename Vertex<TypeG>						Vertex_t;
 	typedef typename std::set<Vertex_t>					GraphStorage;
 	typedef typename GraphStorage::iterator				GraphStorageItr;
 	typedef typename GraphStorage::const_iterator		GraphStorageConstItr;
@@ -102,18 +109,33 @@ public:
 	typedef typename Graph_t::iterator					GraphTypeItr;
 	typedef typename Graph_t::const_iterator			GraphTypeConstItr;
 
+	typedef typename std::map<	Vertex_t*, 
+							int, 
+							CompareIterator<Vertex_t*> > DistanceMap_t;
+
+	typedef typename DistanceMap_t TimeMap_t;
+
+	typedef typename std::map<	Vertex_t*, 
+					Vertex_t*, 
+					CompareIterator<Vertex_t*> > ParentMap_t;
+
 public:
 	Graph(GraphType eType = UNDIRECTED) : m_Type(eType) {
-		m_BFSdone = false;
+		m_TopologicalSortList = std::list<Vertex_t *>();
 	}
 	~Graph() {}
 
 	void AddVertex(Vertex_t vertexID) {
-		if ( m_GraphStorage.find(vertexID) == m_GraphStorage.end()) {
+		GraphStorageItr pos = m_GraphStorage.find(vertexID);
+		if ( pos == m_GraphStorage.end()) {
 			m_GraphStorage.insert(vertexID);
+			m_Graph[&(*(m_GraphStorage.find(vertexID)))] = AdjList_t();
 		}	
-		m_BFSdone = false; // any modification done
 	}
+
+	void AddVertex(TypeG vVertex) {
+        this->AddVertex((Vertex_t) vVertex);
+    }
 
 	AdjList_t GetAdjList(Vertex_t vertexID) {
 		Vertex_t *vVertexIDPtr  = &(*(m_GraphStorage.find(vertexID)));
@@ -135,10 +157,9 @@ public:
 		if ( m_Type == UNDIRECTED) {
 			m_Graph[vRightPtr].push_back(vLeftPtr);
 		}
-		m_BFSdone = false;
 	}
 
-	void AddEdge(_TyG vLevt, _TyG vRight) {
+	void AddEdge(TypeG vLevt, TypeG vRight) {
         this->AddEdge((Vertex_t) vLevt, (Vertex_t) vRight);
     }
 
@@ -147,10 +168,18 @@ public:
 			pStart = m_Graph.begin()->first;
 		}
 		_BFS(pStart);
-		m_BFSdone = true;
+
 	}
 
-	void print_path(_TyG S, _TyG V) {
+	void DFS(Vertex_t *pStart = (Vertex_t*)0) {
+		if ( ! pStart) {
+			pStart = m_Graph.begin()->first;
+		}
+		_DFS(pStart,0);
+	}
+
+
+	bool GetShortestPath(TypeG S, TypeG V, std::vector<TypeG> &outPath) {
 
 		Vertex_t *pS  = (Vertex_t*)0;
 		Vertex_t *pV =  (Vertex_t*)0;
@@ -163,50 +192,56 @@ public:
 		}
 
 		if ( !pS || !pV){
-			return;
+			return false;
 		}
 
-		if ( ! m_BFSdone ) {			
-			_BFS(pS);
-		}
-		std::vector<Vertex_t *> pathVector;
-		_print_path(pS, pV, pathVector);
+		_BFS(pS);
 
-		std::vector<Vertex_t *>::iterator itr ;
-		for (itr =  pathVector.begin();itr != pathVector.end() - 1; ++itr) {
-			std::cout << *(*itr) << " --> " ;
+		_GetShortestPath(pS, pV, outPath);
+		return true;
+	}
+
+	bool SortToplogical( std::list<TypeG> &outList) {
+		m_Operation = TOPOLOGICALSORT;
+		_DFS(m_Graph.begin()->first);
+		for ( std::list<Vertex_t *>::iterator itr = m_TopologicalSortList.begin();
+			itr != m_TopologicalSortList.end(); ++itr) {
+				outList.push_back((*itr)->getRemoteData());
 		}
-		std::cout << *(*itr);
-		std::cout << std::endl;
+		m_TopologicalSortList.clear();
+		return true;
 	}
 	
 private:
-	void _print_path(Vertex_t *S,Vertex_t *V, std::vector<Vertex_t *> & pathVector){
+	bool _GetShortestPath(Vertex_t *S, Vertex_t *V, std::vector<TypeG> & pathVector){
 		if (*S == *V) {
-			pathVector.push_back(V);
+			pathVector.push_back(V->getRemoteData());
 		} else {
-			if ( m_bfs_parent[V] == ( Vertex_t*)0)
-				std::cout << "No Parth from " << *S << " to" << *V << "exists" << std::endl;
+			if ( m_BFSParentMap[V] == ( Vertex_t*)0)
+				return false;
 			else
-				_print_path(S,m_bfs_parent[V],pathVector);
+				_GetShortestPath(S,m_BFSParentMap[V],pathVector);
 
-			pathVector.push_back(V);
+			pathVector.push_back(V->getRemoteData());
 		}
+		return true;
 	}
 	void _BFS(Vertex_t *S) {
 		// 1. Paint every vertex as WHITE
 		// 2. Set the d to -1
 		// 3. Set the p of each vertex to NULL
+		m_BFSDistanceMap.clear();
+		m_BFSParentMap.clear();
 		for ( GraphTypeItr itr = m_Graph.begin();itr != m_Graph.end(); ++itr) {
 			Vertex_t *U = itr->first;
 			U->m_Color =  WHITE;
-			m_bfs_Distance[U] = -1;
-			m_bfs_parent[U] = (Vertex_t *)0;
+			m_BFSDistanceMap[U] = -1;
+			m_BFSParentMap[U] = (Vertex_t *)0;
 		}
-		S->m_Color = GRAY;
+		S->m_Color = GREY;
 		// Initialize the d to 0
-		m_bfs_Distance[S] = 0;
-		m_bfs_parent[S] = (Vertex_t *)0;
+		m_BFSDistanceMap[S] = 0;
+		m_BFSParentMap[S] = (Vertex_t *)0;
 
 		std::deque<Vertex_t*> Q;
 		// Enque s ( given vertex ) to Queue Q
@@ -219,15 +254,71 @@ private:
 			for ( AdjListItr_t itr = vAdjList.begin(); itr != vAdjList.end(); ++itr) {
 				Vertex_t *V = *(itr);
 				if ( V->m_Color == WHITE ) {
-					V->m_Color = GRAY;
-					m_bfs_Distance[V] = m_bfs_Distance[U] + 1;
-					m_bfs_parent[V] = U;
+					V->m_Color = GREY;
+					m_BFSDistanceMap[V] = m_BFSDistanceMap[U] + 1;
+					m_BFSParentMap[V] = U;
 					Q.push_back(V);
 				}
 			}
 			U->m_Color = BLACK;
 		} // Queue empty loop
 	}
+	void _DFS(Vertex_t *S) {
+		m_DFSStartTimeMap.clear();
+		m_DFSFinishTimeMap.clear();
+		m_DFSParentMap.clear();		
+		for ( GraphTypeItr itr = m_Graph.begin();itr != m_Graph.end(); ++itr) {
+			itr->first->m_Color        = WHITE;
+			m_DFSParentMap[itr->first] = (Vertex_t*)0;
+		}
+		int time = 0;
+		for ( GraphTypeItr itr = m_Graph.begin();itr != m_Graph.end(); ++itr) {
+			if ( itr->first->m_Color == WHITE ) {
+				_DFS_Visit(	itr->first,
+							m_DFSStartTimeMap,
+							m_DFSFinishTimeMap,
+							m_DFSParentMap, 
+							time);
+			}
+		}
+	}
+	void _DFS_Visit(Vertex_t *inU, TimeMap_t & d, 
+					TimeMap_t & f, ParentMap_t & p , 
+					int & time) {
+			std::stack<Vertex_t *> S;
+			S.push(inU);
+			while ( !S.empty()) {
+				Vertex_t *U  = S.top();				
+				AdjList_t vAdjList = m_Graph.find(U)->second;
+				AdjListItr_t itr;
+				if ( U->m_Color == WHITE ) {
+					time = time + 1;
+					d[U] = time;
+					U->m_Color = GREY;
+					for ( itr = vAdjList.begin(); itr != vAdjList.end(); ++itr) {
+						Vertex_t *V = *(itr);
+						if ( V->m_Color == WHITE ) {
+							p[V] = U;
+							S.push(V);
+							break;
+						}
+					}
+				} else {
+					itr = vAdjList.end();
+				}
+				if ( itr == vAdjList.end() && U->m_Color == GREY ) {
+					time = time + 1;
+					U->m_Color = BLACK;
+					f[U] = time;
+					// For topological sorting
+					if (m_Operation == TOPOLOGICALSORT) {
+						m_TopologicalSortList.push_front(U);
+					}
+					S.pop();
+				}
+			}
+	}
+
 public:
 	friend std::ostream& operator << (std::ostream& os, Graph& graph) {
 		std::cout << "---------------------------------------------" << std::endl;
@@ -251,56 +342,19 @@ private:
 	GraphStorage  m_GraphStorage;
 
 	// Distance map
-	std::map<	Vertex_t*, 
-				int, 
-				CompareIterator<Vertex_t*> > m_bfs_Distance;
+	DistanceMap_t  m_BFSDistanceMap;
+	// Visit Time Map
+	TimeMap_t      m_DFSStartTimeMap;
+	TimeMap_t      m_DFSFinishTimeMap;
 	// Parent Map
-	std::map<	Vertex_t*, 
-				Vertex_t*, 
-				CompareIterator<Vertex_t*> > m_bfs_parent;
-	//is BFS algorithm executed
-	bool m_BFSdone;
+	ParentMap_t    m_BFSParentMap;
+	ParentMap_t    m_DFSParentMap;
+	// topological sorting list.
+	std::list<Vertex_t *> m_TopologicalSortList;
+	GraphOperation m_Operation;
 
 protected:
 };
 
 
 #endif
-
-
-/*
-		// Tree and Back Edges both.
-		std::stack<Vertex_t *> TBEdges; 
-
-		InitToFalse();
-
-		// For all the vertex in the graph
-		// There can be some non-connected comoponents
-		for ( GraphStorageItr	iter = this->m_GraphStorage.begin(); 
-								iter != this->m_GraphStorage.end(); 
-								++iter) {
-			if ( iter->isVisited() == false ) {
-				TBEdges.push(&(*iter));
-			}
-			while (!TBEdges.empty()) {
-				Vertex_t* vLeft = TBEdges.top();
-				TBEdges.pop();
-				vLeft->SetVisited(true);
-
-				AdjList_t AdjList = this->GetAdjList(*vLeft);
-				for ( AdjListItr_t	iterAdjList = AdjList.begin();  
-										iterAdjList != AdjList.end();  
-										++iterAdjList) {
-					Vertex_t *vTemp = (*iterAdjList);
-					if ( vTemp->isVisited() == false ) {
-						TBEdges.push(&(*vTemp));
-					}
-				} // Adjacency loop ends here.
-				Vertex_t *vRight = TBEdges.top();
-				TBEdges.pop();
-				std::cout << "Adding Edge " << *vLeft << "," << *vRight << std::endl;
-				outDFST.AddEdge(*vLeft, *vRight);
-				//TBEdges.pop();
-			} // Tree and Back Edges loop ends here
-		//} // forest loop ends here
-*/

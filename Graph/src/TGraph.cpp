@@ -23,19 +23,9 @@
 
 #include "Graph.h"
 #include <string>
+#include <assert.h>
 
-void BuildMyGraph( Graph<std::string> &myGraph) {
-
-	/*myGraph.AddEdge("v1","v5");
-	myGraph.AddEdge("v5","v6");
-	myGraph.AddEdge("v6","v1");
-	myGraph.AddEdge("v1","v3");
-	myGraph.AddEdge("v1","v2");
-	myGraph.AddEdge("v3","v2");
-	myGraph.AddEdge("v2","v4");
-	myGraph.AddEdge("v1","v4");
-	myGraph.AddEdge("v10", "v11");
-	*/
+void BuildMyGraphShortPathTest(Graph<std::string> &myGraph) {	
 	myGraph.AddEdge("v","r");
 	myGraph.AddEdge("r","s");
 	myGraph.AddEdge("s","w");
@@ -46,28 +36,64 @@ void BuildMyGraph( Graph<std::string> &myGraph) {
 	myGraph.AddEdge("x","u");
 	myGraph.AddEdge("x","y");
 	myGraph.AddEdge("u","y");
-
-	/*myGraph.AddEdge("a","b");
-	myGraph.AddEdge("a","c");
-	myGraph.AddEdge("b","d");
-	myGraph.AddEdge("b","e");
-	myGraph.AddEdge("e","h");
-	myGraph.AddEdge("c","f");
-	myGraph.AddEdge("c","g");*/
-
 }
 
+void BuildMyGraphTS(Graph<std::string> &myGraph) {
+
+	myGraph.AddEdge("A","D");
+	myGraph.AddEdge("A","E");
+
+	myGraph.AddEdge("B","E");
+
+	myGraph.AddEdge("C","F");
+	myGraph.AddEdge("C","G");
+	myGraph.AddEdge("C","A");
+	myGraph.AddEdge("C","B");
+
+	myGraph.AddEdge("D","E");
+	myGraph.AddEdge("D","F");
+
+	myGraph.AddEdge("E","F");
+
+	myGraph.AddEdge("F","H");
+
+	myGraph.AddVertex("G");
+	myGraph.AddVertex("H");
+}
 int main(int argc, char **argv) {
 
-	Graph<std::string> myGraph;
-	BuildMyGraph(myGraph);
+	std::string expctedResult = "";
+	std::string actualResult  = "";
 
-	std::cout << myGraph;
-	//myGraph.BFS();
+	// Test 1
+	Graph<std::string> myGraphShortestPath;
+	BuildMyGraphShortPathTest(myGraphShortestPath);
+	std::vector<std::string> path;
+	myGraphShortestPath.GetShortestPath("r","y",path);
+	expctedResult = "rswxy";
+	actualResult  = "";
+	for ( std::vector<std::string>::iterator itr  = path.begin();
+		itr != path.end(); ++itr) {
+			actualResult.append(*itr);
+	}
+	assert ( expctedResult == actualResult);
+	expctedResult = "";
+	actualResult  = "";
 
+	// Test 2
+	Graph<std::string> myGraphTS(DIRECTED);
+	BuildMyGraphTS(myGraphTS);
+	std::list<std::string> listTS;
+	myGraphTS.SortToplogical(listTS);
+	expctedResult = "CGBADEFH";
+	for ( std::list<std::string>::iterator itr  = listTS.begin();
+		itr != listTS.end(); ++itr) {
+			actualResult.append(*itr);
+	}
+	assert ( expctedResult == actualResult);
+	expctedResult = "";
+	actualResult  = "";
 
-	myGraph.print_path("r","y");
-//	myGraph.DepthFirstSearch();
 
 
 }
