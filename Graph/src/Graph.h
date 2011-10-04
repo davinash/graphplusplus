@@ -291,7 +291,7 @@ private:
 				Vertex_t *U  = S.top();				
 				AdjList_t vAdjList = m_Graph.find(U)->second;
 				AdjListItr_t itr;
-				if ( U->m_Color == WHITE ) {
+				if ( U->m_Color == WHITE ) {  
 					time = time + 1;
 					d[U] = time;
 					U->m_Color = GREY;
