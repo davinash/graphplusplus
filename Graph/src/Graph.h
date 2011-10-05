@@ -93,18 +93,18 @@ template <typename TypeG>
 class Graph {
 private:		
 public:
-    typedef typename Vertex<TypeG>						Vertex_t;
-    typedef typename std::set<Vertex_t>					GraphStorage;
-    typedef typename GraphStorage::iterator				GraphStorageItr;
-    typedef typename GraphStorage::const_iterator		GraphStorageConstItr;
+    typedef typename Vertex<TypeG>                      Vertex_t;
+    typedef typename std::set<Vertex_t>                 GraphStorage;
+    typedef typename GraphStorage::iterator             GraphStorageItr;
+    typedef typename GraphStorage::const_iterator       GraphStorageConstItr;
 
-    typedef typename std::list<Vertex_t *>				AdjList_t;
-    typedef typename AdjList_t::iterator				AdjListItr_t;
-    typedef typename AdjList_t::const_iterator			AdjListTypeConstItr;
+    typedef typename std::list<Vertex_t *>              AdjList_t;
+    typedef typename AdjList_t::iterator                AdjListItr_t;
+    typedef typename AdjList_t::const_iterator          AdjListTypeConstItr;
 
     typedef typename std::map<	Vertex_t*, 
                         AdjList_t, 
-                        CompareIterator<Vertex_t*> >	Graph_t;
+                        CompareIterator<Vertex_t*> >    Graph_t;
 
     typedef typename Graph_t::iterator					GraphTypeItr;
     typedef typename Graph_t::const_iterator			GraphTypeConstItr;
