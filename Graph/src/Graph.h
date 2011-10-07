@@ -55,6 +55,60 @@ enum GraphOperation {
     TOPOLOGICALSORT
 };
 
+template <typename UF>
+class UnionFind {
+private:
+    struct Element {
+        UF m_value;
+        int m_parent;
+        int m_rank;
+
+        Element(const UF& value, int parent)
+        :   m_value(value), m_parent(parent), m_rank(0)
+        {}
+    };
+private:
+    std::map<int,Element> m_Elements;
+public:
+    UnionFind(){}
+public:
+    void AddElement(int x, const UF& value = UF()) {
+        m_Elements.insert(std::make_pair(x, Element(value, x)));
+    }
+    int FindSet(int x) {
+        Element& element = GetElement(x);
+        int& parent = element.m_parent;
+        if(parent != x) {
+            parent = FindSet(parent);
+        }
+        return parent;
+    }
+	void UnionSets(int x, int y) {
+        int left  = FindSet(x);
+        int right = FindSet(y);
+        if(left != right) SetupParentRelationship(left, right);
+    }
+private:
+    Element& GetElement(int x) {
+        typename std::map<int,Element>::iterator it = m_Elements.find(x);
+		return it->second;
+    }
+
+    void SetupParentRelationship(int x, int y) {
+        Element& elementX = GetElement(x);
+        Element& elementY = GetElement(y);
+        int& rankX = elementX.m_rank;
+        int& rankY = elementY.m_rank;
+        if(rankX > rankY) {
+            elementY.m_parent = x;
+        } else {
+            elementX.m_parent = y;
+            if(rankX == rankY) ++rankY;
+        }
+	}
+};
+
+
 template <typename TypeV>
 class Vertex {
 public:
@@ -94,30 +148,27 @@ class Graph {
 private:		
 public:
     typedef typename Vertex<TypeG>                      Vertex_t;
+
     typedef typename std::set<Vertex_t>                 GraphStorage;
     typedef typename GraphStorage::iterator             GraphStorageItr;
-    typedef typename GraphStorage::const_iterator       GraphStorageConstItr;
 
     typedef typename std::list<Vertex_t *>              AdjList_t;
     typedef typename AdjList_t::iterator                AdjListItr_t;
-    typedef typename AdjList_t::const_iterator          AdjListTypeConstItr;
 
-    typedef typename std::map<	Vertex_t*, 
-                        AdjList_t, 
-                        CompareIterator<Vertex_t*> >    Graph_t;
+    typedef typename std::map<Vertex_t*, 
+                              AdjList_t, 
+                              CompareIterator<Vertex_t*> > Graph_t;
+    typedef typename Graph_t::iterator      GraphTypeItr;
 
-    typedef typename Graph_t::iterator					GraphTypeItr;
-    typedef typename Graph_t::const_iterator			GraphTypeConstItr;
-
-    typedef typename std::map<	Vertex_t*, 
-                            int, 
-                            CompareIterator<Vertex_t*> > DistanceMap_t;
-
+    typedef typename std::map<Vertex_t*, 
+                              int, 
+                              CompareIterator<Vertex_t*> > DistanceMap_t;
     typedef typename DistanceMap_t TimeMap_t;
-
-    typedef typename std::map<	Vertex_t*, 
-                    Vertex_t*, 
-                    CompareIterator<Vertex_t*> > ParentMap_t;
+    typedef typename std::map<Vertex_t*, 
+                              Vertex_t*, 
+                              CompareIterator<Vertex_t*> > ParentMap_t;
+	typedef typename std::vector<std::pair<int, std::pair<Vertex_t*, Vertex_t*> > > Edge_t;
+	typedef typename Edge_t::iterator EdgeIter_t;
 
 public:
     Graph(GraphType eType = UNDIRECTED) : m_Type(eType) {
@@ -159,8 +210,19 @@ public:
         }
     }
 
-    void AddEdge(TypeG vLevt, TypeG vRight) {
-        this->AddEdge((Vertex_t) vLevt, (Vertex_t) vRight);
+    void AddEdge(TypeG vLeft, TypeG vRight) {
+        this->AddEdge((Vertex_t) vLeft, (Vertex_t) vRight);
+    }
+
+    void AddEdge(TypeG vLeft, TypeG vRight, int weight) {
+        this->AddEdge((Vertex_t) vLeft, (Vertex_t) vRight);
+
+		Vertex_t *vLeftPtr  = &(*(m_GraphStorage.find(vLeft)));
+        Vertex_t *vRightPtr = &(*(m_GraphStorage.find(vRight)));
+
+		m_EdgeVector.push_back(std::make_pair(weight, 
+                                              std::make_pair(vLeftPtr,
+                                                             vRightPtr)));
     }
 
     void BFS(Vertex_t *pStart = (Vertex_t*)0) {
@@ -211,6 +273,30 @@ public:
         m_TopologicalSortList.clear();
         return true;
     }
+
+	void BuildMST() {
+		UnionFind<Vertex_t*> ufSet;
+		int index = 0;
+		std::map<Vertex_t*, int> VertexArray;
+		//MAKE-SET(v)
+		for ( GraphTypeItr itr = m_Graph.begin();itr != m_Graph.end(); ++itr) {
+            Vertex_t *U = itr->first;
+			ufSet.AddElement(index, U);
+			VertexArray.insert(std::make_pair(U,index));
+			index++;
+		}
+		//sort the edges of E into nondecreasing order by weight w
+		std::sort(m_EdgeVector.begin(), m_EdgeVector.end());
+		for ( EdgeIter_t it = m_EdgeVector.begin(); it != m_EdgeVector.end(); ++it) {
+			Vertex_t *pLeft  = (it->second).first;
+			Vertex_t *pRight = (it->second).second;
+			int leftIndex    = (VertexArray.find(pLeft))->second;
+			int rightIndex   = (VertexArray.find(pRight))->second;
+			if ( ufSet.FindSet(leftIndex) != ufSet.FindSet(rightIndex)){
+				ufSet.UnionSets(leftIndex,rightIndex);
+			}
+		}
+	}
     
 private:
     bool _GetShortestPath(Vertex_t *S, Vertex_t *V, std::vector<TypeG> & pathVector){
@@ -339,6 +425,7 @@ public:
 private:
     GraphType m_Type; 
     Graph_t   m_Graph;
+	Edge_t    m_EdgeVector;
     GraphStorage  m_GraphStorage;
 
     // Distance map

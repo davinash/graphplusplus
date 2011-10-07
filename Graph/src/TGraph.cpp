@@ -56,9 +56,29 @@ void BuildMyGraphTS(Graph<std::string> &myGraph) {
 	myGraph.AddEdge("E","F");
 
 	myGraph.AddEdge("F","H");
+	
+}
+void BuildMyWeightedGraph(Graph<std::string> &myGraph) {
+	myGraph.AddEdge("A", "B", 1);
+	myGraph.AddEdge("A", "D", 2);	
+	myGraph.AddEdge("A", "F", 2);
 
-	myGraph.AddVertex("G");
-	myGraph.AddVertex("H");
+	myGraph.AddEdge("B", "D", 2);	
+	myGraph.AddEdge("B", "C", 1);
+
+	myGraph.AddEdge("C", "D", 1);
+	myGraph.AddEdge("C", "E", 3);	
+
+	myGraph.AddVertex ("D");
+
+	myGraph.AddEdge("E", "D", 2);
+	myGraph.AddEdge("E", "G", 1);	
+
+	myGraph.AddEdge("F", "D", 1);	
+
+	myGraph.AddEdge("G", "D", 3);
+	myGraph.AddEdge("G", "F", 3);	
+
 }
 int main(int argc, char **argv) {
 
@@ -94,6 +114,8 @@ int main(int argc, char **argv) {
 	expctedResult = "";
 	actualResult  = "";
 
-
-
+	// Test 2
+	Graph<std::string> myGraphWeight;
+	BuildMyWeightedGraph(myGraphWeight);
+	myGraphWeight.BuildMST();
 }
