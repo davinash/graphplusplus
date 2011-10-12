@@ -21,64 +21,77 @@
  *  THE SOFTWARE.
  ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
 
-#include "Graph.h"
+#include "graph.h"
 #include <string>
 #include <assert.h>
 
-void BuildMyGraphShortPathTest(Graph<std::string> &myGraph) {	
-	myGraph.AddEdge("v","r");
-	myGraph.AddEdge("r","s");
-	myGraph.AddEdge("s","w");
-	myGraph.AddEdge("w","x");
-	myGraph.AddEdge("w","t");
-	myGraph.AddEdge("t","x");
-	myGraph.AddEdge("t","u");
-	myGraph.AddEdge("x","u");
-	myGraph.AddEdge("x","y");
-	myGraph.AddEdge("u","y");
+void BuildMyGraphShortPathTest(graph<std::string> &G) {	
+	G.add_edge("v","r");
+	G.add_edge("r","s");
+	G.add_edge("s","w");
+	G.add_edge("w","x");
+	G.add_edge("w","t");
+	G.add_edge("t","x");
+	G.add_edge("t","u");
+	G.add_edge("x","u");
+	G.add_edge("x","y");
+	G.add_edge("u","y");
 }
 
-void BuildMyGraphTS(Graph<std::string> &myGraph) {
+void BuildMyGraphTS(graph<std::string> &G) {
 
-	myGraph.AddEdge("A","D");
-	myGraph.AddEdge("A","E");
+	G.add_edge("A","D");
+	G.add_edge("A","E");
 
-	myGraph.AddEdge("B","E");
+	G.add_edge("B","E");
 
-	myGraph.AddEdge("C","F");
-	myGraph.AddEdge("C","G");
-	myGraph.AddEdge("C","A");
-	myGraph.AddEdge("C","B");
+	G.add_edge("C","F");
+	G.add_edge("C","G");
+	G.add_edge("C","A");
+	G.add_edge("C","B");
 
-	myGraph.AddEdge("D","E");
-	myGraph.AddEdge("D","F");
+	G.add_edge("D","E");
+	G.add_edge("D","F");
 
-	myGraph.AddEdge("E","F");
+	G.add_edge("E","F");
 
-	myGraph.AddEdge("F","H");
+	G.add_edge("F","H");
 	
 }
-void BuildMyWeightedGraph(Graph<std::string> &myGraph) {
-	myGraph.AddEdge("A", "B", 1);
-	myGraph.AddEdge("A", "D", 2);	
-	myGraph.AddEdge("A", "F", 2);
+void BuildMyWeightedGraph(graph<std::string> &G) {
+	G.add_edge("A", "B", 1);
+	G.add_edge("A", "D", 2);	
+	G.add_edge("A", "F", 2);
 
-	myGraph.AddEdge("B", "D", 2);	
-	myGraph.AddEdge("B", "C", 1);
+	G.add_edge("B", "D", 2);	
+	G.add_edge("B", "C", 1);
 
-	myGraph.AddEdge("C", "D", 1);
-	myGraph.AddEdge("C", "E", 3);	
+	G.add_edge("C", "D", 1);
+	G.add_edge("C", "E", 3);	
 
-	myGraph.AddVertex ("D");
+	G.add_vertex ("D");
 
-	myGraph.AddEdge("E", "D", 2);
-	myGraph.AddEdge("E", "G", 1);	
+	G.add_edge("E", "D", 2);
+	G.add_edge("E", "G", 1);	
 
-	myGraph.AddEdge("F", "D", 1);	
+	G.add_edge("F", "D", 1);	
 
-	myGraph.AddEdge("G", "D", 3);
-	myGraph.AddEdge("G", "F", 3);	
+	G.add_edge("G", "D", 3);
+	G.add_edge("G", "F", 3);	
 
+}
+
+void BuildBFGraph(graph<std::string> &G){
+	G.add_edge("s","t",6);
+	G.add_edge("s","y",7);
+	G.add_edge("t","x",5);
+	G.add_edge("t","y",8);
+	G.add_edge("x","t",-2);
+	G.add_edge("z","x",7);
+	G.add_edge("z","s",2);
+	G.add_edge("y","z",9);
+	G.add_edge("y","x",-3);
+	G.add_edge("t","z",-4);
 }
 int main(int argc, char **argv) {
 
@@ -86,7 +99,7 @@ int main(int argc, char **argv) {
 	std::string actualResult  = "";
 
 	// Test 1
-	Graph<std::string> myGraphShortestPath;
+	graph<std::string> myGraphShortestPath;
 	BuildMyGraphShortPathTest(myGraphShortestPath);
 	std::vector<std::string> path;
 	myGraphShortestPath.GetShortestPath("r","y",path);
@@ -101,7 +114,7 @@ int main(int argc, char **argv) {
 	actualResult  = "";
 
 	// Test 2
-	Graph<std::string> myGraphTS(DIRECTED);
+	graph<std::string> myGraphTS(DIRECTED);
 	BuildMyGraphTS(myGraphTS);
 	std::list<std::string> listTS;
 	myGraphTS.SortToplogical(listTS);
@@ -114,8 +127,13 @@ int main(int argc, char **argv) {
 	expctedResult = "";
 	actualResult  = "";
 
-	// Test 2
-	Graph<std::string> myGraphWeight;
+	// Test 3
+	graph<std::string> myGraphWeight;
 	BuildMyWeightedGraph(myGraphWeight);
 	myGraphWeight.BuildMST();
+
+	// Test 4
+	graph<std::string> bfGraph;
+	BuildBFGraph(bfGraph);
+	graph<std::string>::distance_map_t p;
 }
