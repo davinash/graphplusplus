@@ -71,7 +71,7 @@ struct  comp_edge {
 // graph template class.
 template <typename T, typename W = int >
 class graph {
-public:
+public: 
   // Some typedef for convience.
   typedef typename std::list<T*>                             adj_list_t;
   typedef typename adj_list_t::iterator                      adj_list_itr_t;
