@@ -24,12 +24,32 @@
 #include "graph.h"
 #include <string>
 #include <assert.h>
+#include <iostream>
 
+void test_bfs() {
+    graph<char> g;
+    g.insert('r','v');
+    g.insert('r','s');
+    g.insert('s','w');
+    g.insert('w','t');
+    g.insert('w','x');
+    g.insert('x','t');
+    g.insert('x','u');
+    g.insert('x','y');
+    g.insert('t','u');
+    g.insert('u','y');
+
+    graph<char>::bfs_data *pbd;
+    pbd = g.breadh_first_search();
+    for ( graph<char>::bfs_data::iterator it = pbd->begin();
+                                          it != pbd->end();
+                                          ++it){
+        std::cout << *it;
+    }
+}
 
 int main(int argc, char **argv) {
-	graph<std::string> g;
-	g.insert("A","B");
-  g.breadh_first_search();
+    test_bfs();
 }
 
 
