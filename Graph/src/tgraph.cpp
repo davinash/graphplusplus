@@ -27,29 +27,46 @@
 #include <iostream>
 
 void test_bfs() {
-    graph<char> g;
-    g.insert('r','v');
-    g.insert('r','s');
-    g.insert('s','w');
-    g.insert('w','t');
-    g.insert('w','x');
-    g.insert('x','t');
-    g.insert('x','u');
-    g.insert('x','y');
-    g.insert('t','u');
-    g.insert('u','y');
+    graph<std::string> g;
+    g.insert("r","v");
+    g.insert("r","s");
+    g.insert("s","w");
+    g.insert("w","t");
+    g.insert("w","x");
+    g.insert("x","t");
+    g.insert("x","u");
+    g.insert("x","y");
+    g.insert("t","u");
+    g.insert("u","y");
 
-    graph<char>::bfs_data *pbd;
+    graph<std::string>::bfs_data *pbd;
     pbd = g.breadh_first_search();
-    for ( graph<char>::bfs_data::iterator it = pbd->begin();
+    for ( graph<std::string>::bfs_data::iterator it = pbd->begin();
                                           it != pbd->end();
                                           ++it){
-        std::cout << *it;
+        std::cout << **it;
     }
+}
+void test_topological_sort() {
+    graph<int> g(DIRECTED);
+    g.insert(7,11);
+    g.insert(7,8);
+    g.insert(5,11);
+    g.insert(3,8);
+    g.insert(3,10);
+    g.insert(11,2);
+    g.insert(11,9);
+    g.insert(11,10);
+    g.insert(8,9);
+
+    graph<int>::dfs_data *pdd;
+    pdd = g.topological_sort();
+
 }
 
 int main(int argc, char **argv) {
     test_bfs();
+    test_topological_sort();
 }
 
 
